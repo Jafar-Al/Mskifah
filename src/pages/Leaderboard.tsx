@@ -104,6 +104,8 @@ export default function Leaderboard() {
                 const isCurrentUser = user.id === currentUser?.id;
                 const answeredCount = Object.keys(user.answeredQuestions).length;
                 const correctCount = Object.values(user.answeredQuestions).filter(q => q.correct).length;
+                const wazariAnsweredCount = Object.keys(user.wazariAnsweredQuestions || {}).length;
+                const wazariCorrectCount = Object.values(user.wazariAnsweredQuestions || {}).filter(q => q.correct).length;
 
                 return (
                   <div
@@ -143,6 +145,11 @@ export default function Leaderboard() {
                       <p className="text-sm text-muted-foreground">
                         {correctCount}/{answeredCount} correct answers
                       </p>
+                      {wazariAnsweredCount > 0 && (
+                        <p className="text-xs text-muted-foreground">
+                          {wazariCorrectCount}/{wazariAnsweredCount} وزاري
+                        </p>
+                      )}
                     </div>
 
                     {/* Score */}

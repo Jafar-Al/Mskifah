@@ -41,7 +41,7 @@ export default function WazariIntensive() {
   }
 
   return (
-    <div className="min-h-screen bg-background dna-pattern" dir="rtl">
+    <div className="min-h-screen bg-background dna-pattern">
       <Navbar />
 
       <main className="container mx-auto px-4 pt-24 pb-12">

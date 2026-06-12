@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Navbar from '@/components/Navbar';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Plus, Pencil, Trash2, Loader2, Search, UploadCloud, Lock, Unlock, Image, X, KeyRound } from 'lucide-react';
+import { Plus, Pencil, Trash2, Loader2, Search, UploadCloud, Lock, Unlock, Image, X, KeyRound, UserPlus } from 'lucide-react';
 import {
     Dialog,
     DialogContent,
@@ -41,6 +41,7 @@ interface AdminUser {
     created_at: string;
     answered_count: number;
     correct_count: number;
+    created_by_admin_id?: string | null;
 }
 
 // ── Shared Image Upload Field ────────────────────────────────────────────────
@@ -140,6 +141,7 @@ function QuestionFormFields({
     pts, setPts,
     imgUrl, setImgUrl,
     token,
+    allowFourthOption,
 }: {
     qText: string; setQText: (v: string) => void;
     opts: string[]; setOpts: (v: string[]) => void;
@@ -147,6 +149,7 @@ function QuestionFormFields({
     pts: string; setPts: (v: string) => void;
     imgUrl: string; setImgUrl: (v: string) => void;
     token: string | null;
+    allowFourthOption?: boolean;
 }) {
     return (
         <>
@@ -160,6 +163,24 @@ function QuestionFormFields({
                     <Input value={opt} onChange={e => { const n = [...opts]; n[idx] = e.target.value; setOpts(n); }} required dir="rtl" />
                 </div>
             ))}
+            {allowFourthOption && (
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => {
+                        if (opts.length === 3) {
+                            setOpts([...opts, '']);
+                        } else {
+                            if (correct === '3') setCorrect('0');
+                            setOpts(opts.slice(0, 3));
+                        }
+                    }}
+                >
+                    {opts.length === 3 ? '+ أضف خيار رابع' : '− احذف الخيار الرابع'}
+                </Button>
+            )}
             <div className="space-y-2">
                 <Label>الإجابة الصحيحة</Label>
                 <Select value={correct} onValueChange={setCorrect}>
@@ -168,6 +189,7 @@ function QuestionFormFields({
                         <SelectItem value="0">الخيار 1</SelectItem>
                         <SelectItem value="1">الخيار 2</SelectItem>
                         <SelectItem value="2">الخيار 3</SelectItem>
+                        {opts.length >= 4 && <SelectItem value="3">الخيار 4</SelectItem>}
                     </SelectContent>
                 </Select>
             </div>
@@ -241,6 +263,11 @@ export default function Admin() {
     const [isResetPasswordDialogOpen, setIsResetPasswordDialogOpen] = useState(false);
     const [resetPasswordUser, setResetPasswordUser] = useState<AdminUser | null>(null);
     const [newPassword, setNewPassword] = useState('');
+    const [isCreateUserDialogOpen, setIsCreateUserDialogOpen] = useState(false);
+    const [customUserName, setCustomUserName] = useState('');
+    const [customUserScore, setCustomUserScore] = useState('0');
+
+    const isSuperAdmin = currentUser?.email?.toLowerCase() === 'jafaradmin@mskifah.com';
 
     useEffect(() => { fetchQuestions(); fetchResources(); fetchWazari(); }, []);
     useEffect(() => { if (token) fetchUsers(); }, [token]);
@@ -364,6 +391,22 @@ export default function Admin() {
         const res = await fetch(`/api/admin/users/${userId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
         if (res.ok) { toast({ title: 'تم', description: 'حُذف الحساب' }); fetchUsers(); }
         else { const d = await res.json().catch(() => ({})); toast({ title: 'خطأ', variant: 'destructive', description: d?.error || 'فشل الحذف' }); }
+    };
+
+    const handleCreateCustomUser = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const res = await fetch('/api/admin/create-custom-user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ name: customUserName, score: parseInt(customUserScore) || 0 })
+        });
+        if (res.ok) {
+            toast({ title: 'تم', description: `تم إنشاء المستخدم ${customUserName}` });
+            setIsCreateUserDialogOpen(false); setCustomUserName(''); setCustomUserScore('0'); fetchUsers();
+        } else {
+            const d = await res.json().catch(() => ({}));
+            toast({ title: 'خطأ', variant: 'destructive', description: d?.error || 'فشل الإنشاء' });
+        }
     };
 
     const handleResetPassword = async (e: React.FormEvent) => {
@@ -520,6 +563,7 @@ export default function Admin() {
                                             pts={wazariPoints} setPts={setWazariPoints}
                                             imgUrl={wazariImageUrl} setImgUrl={setWazariImageUrl}
                                             token={token}
+                                            allowFourthOption
                                         />
                                         <Button type="submit" className="w-full">حفظ</Button>
                                     </form>
@@ -783,22 +827,45 @@ export default function Admin() {
                                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                                 <Input value={userQuery} onChange={e => setUserQuery(e.target.value)} placeholder="Search users..." className="pr-9" />
                             </div>
+                            {isSuperAdmin && (
+                                <Dialog open={isCreateUserDialogOpen} onOpenChange={open => { setIsCreateUserDialogOpen(open); if (!open) { setCustomUserName(''); setCustomUserScore('0'); } }}>
+                                    <DialogTrigger asChild>
+                                        <Button variant="secondary"><UserPlus className="mr-2 h-4 w-4" /> إضافة مستخدم</Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="max-w-sm">
+                                        <DialogHeader><DialogTitle dir="rtl">إضافة مستخدم مخصص</DialogTitle></DialogHeader>
+                                        <form onSubmit={handleCreateCustomUser} className="space-y-4">
+                                            <div className="space-y-2">
+                                                <Label>الاسم</Label>
+                                                <Input value={customUserName} onChange={e => setCustomUserName(e.target.value)} required dir="rtl" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>النقاط</Label>
+                                                <Input type="number" value={customUserScore} onChange={e => setCustomUserScore(e.target.value)} required />
+                                            </div>
+                                            <Button type="submit" className="w-full">إنشاء</Button>
+                                        </form>
+                                    </DialogContent>
+                                </Dialog>
+                            )}
                         </div>
                         {loadingUsers ? <div className="p-6 glass-card rounded-xl text-center"><Loader2 className="animate-spin mx-auto" /></div> : (
                             <div className="space-y-3">
                                 {filteredUsers.map(u => {
                                     const isSelf = u.id === currentUser?.id;
+                                    const isCustomUser = !!u.created_by_admin_id;
+                                    const canDelete = !isSelf && (!isCustomUser || isSuperAdmin);
                                     return (
                                         <div key={u.id} className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between p-4 bg-background/50 rounded-lg border">
                                             <div>
-                                                <p className="font-medium">{u.name}</p>
+                                                <p className="font-medium">{u.name}{isCustomUser && <span className="text-xs text-accent mr-2"> (مخصص)</span>}</p>
                                                 <p className="text-sm text-muted-foreground mt-1">{u.email}</p>
                                                 <p className="text-sm text-muted-foreground mt-1">{u.role.toUpperCase()} · {u.score} pts · {u.correct_count}/{u.answered_count} correct</p>
                                             </div>
                                             <div className="flex gap-2">
-                                                <Button variant="ghost" size="icon" title="إعادة تعيين كلمة المرور" onClick={() => { setResetPasswordUser(u); setNewPassword(''); setIsResetPasswordDialogOpen(true); }}><KeyRound className="h-4 w-4" /></Button>
+                                                {!isCustomUser && <Button variant="ghost" size="icon" title="إعادة تعيين كلمة المرور" onClick={() => { setResetPasswordUser(u); setNewPassword(''); setIsResetPasswordDialogOpen(true); }}><KeyRound className="h-4 w-4" /></Button>}
                                                 <Button variant="ghost" size="icon" onClick={() => handleUserEdit(u)}><Pencil className="h-4 w-4" /></Button>
-                                                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" disabled={isSelf} onClick={() => handleUserDelete(u.id)}><Trash2 className="h-4 w-4" /></Button>
+                                                {canDelete && <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleUserDelete(u.id)}><Trash2 className="h-4 w-4" /></Button>}
                                             </div>
                                         </div>
                                     );

@@ -102,6 +102,13 @@ async function initDb() {
     );
   `);
 
+  // Migration: add created_by_admin_id to users if missing
+  const userCols = await db.all(`PRAGMA table_info(users);`);
+  const hasCreatedBy = userCols.some((c: any) => c.name === 'created_by_admin_id');
+  if (!hasCreatedBy) {
+    await db.exec('ALTER TABLE users ADD COLUMN created_by_admin_id TEXT');
+  }
+
   // Migration: add image_url to questions if missing
   const questionCols = await db.all(`PRAGMA table_info(questions);`);
   const hasImageUrl = questionCols.some((c: any) => c.name === 'image_url');
@@ -198,6 +205,34 @@ async function initDb() {
     await seedWazariLessons();
   }
 
+  // Migration: add new wazari lessons (IDs 12-24) if missing
+  const hasNewLessons = await db.get('SELECT 1 FROM wazari_lessons WHERE id = 12');
+  if (!hasNewLessons) {
+    const newLessons = [
+      { id: 12, title: 'الجهاز العصبي',          unit_title: 'الوحدة الخامسة: التنسيق والتنظيم',   order: 12 },
+      { id: 13, title: 'الاحساس و الاستجابة',     unit_title: 'الوحدة الخامسة: التنسيق والتنظيم',   order: 13 },
+      { id: 14, title: 'الغدد الصم',              unit_title: 'الوحدة الخامسة: التنسيق والتنظيم',   order: 14 },
+      { id: 15, title: 'الدعامة و الحركة',        unit_title: 'الوحدة السادسة: الدعامة والحركة',    order: 15 },
+      { id: 16, title: 'العضلات',                 unit_title: 'الوحدة السادسة: الدعامة والحركة',    order: 16 },
+      { id: 17, title: 'الجهاز الهضمي',           unit_title: 'الوحدة السابعة: أجهزة جسم الإنسان',  order: 17 },
+      { id: 18, title: 'جهاز الدوران',            unit_title: 'الوحدة السابعة: أجهزة جسم الإنسان',  order: 18 },
+      { id: 19, title: 'الجهاز التنفسي',          unit_title: 'الوحدة السابعة: أجهزة جسم الإنسان',  order: 19 },
+      { id: 20, title: 'جهاز الاخراج',            unit_title: 'الوحدة السابعة: أجهزة جسم الإنسان',  order: 20 },
+      { id: 21, title: 'الاجهزة التناسلية',       unit_title: 'الوحدة الثامنة: التكاثر والمناعة',   order: 21 },
+      { id: 22, title: 'جهاز المناعة',            unit_title: 'الوحدة الثامنة: التكاثر والمناعة',   order: 22 },
+      { id: 23, title: 'المضادات الحيوية',        unit_title: 'الوحدة الثامنة: التكاثر والمناعة',   order: 23 },
+      { id: 24, title: 'الاثراء والتوسع',         unit_title: 'الإثراء والتوسع',                    order: 24 },
+    ];
+    const stmt = await db.prepare(
+      'INSERT OR IGNORE INTO wazari_lessons (id, title, unit_title, is_unlocked, lesson_order) VALUES (?, ?, ?, ?, ?)'
+    );
+    for (const l of newLessons) {
+      await stmt.run(l.id, l.title, l.unit_title, 0, l.order);
+    }
+    await stmt.finalize();
+    console.log('Migrated: added 13 new wazari lessons.');
+  }
+
   // Seed resources if empty
   const resourcesCount = await db.get('SELECT COUNT(*) as count FROM resources');
   if (resourcesCount.count === 0) {
@@ -219,6 +254,19 @@ async function seedWazariLessons() {
     { id: 9,  title: 'الطفرات والاختلالات الوراثية',          unit_title: 'الوحدة الثالثة: الوراثة',                                 order: 9  },
     { id: 10, title: 'أدوات التكنولوجيا الحيوية',             unit_title: 'الوحدة الرابعة: التكنولوجيا الحيوية',                     order: 10 },
     { id: 11, title: 'تطبيقات التكنولوجيا الحيوية',           unit_title: 'الوحدة الرابعة: التكنولوجيا الحيوية',                     order: 11 },
+    { id: 12, title: 'الجهاز العصبي',                        unit_title: 'الوحدة الخامسة: التنسيق والتنظيم',                        order: 12 },
+    { id: 13, title: 'الاحساس و الاستجابة',                   unit_title: 'الوحدة الخامسة: التنسيق والتنظيم',                        order: 13 },
+    { id: 14, title: 'الغدد الصم',                            unit_title: 'الوحدة الخامسة: التنسيق والتنظيم',                        order: 14 },
+    { id: 15, title: 'الدعامة و الحركة',                      unit_title: 'الوحدة السادسة: الدعامة والحركة',                         order: 15 },
+    { id: 16, title: 'العضلات',                               unit_title: 'الوحدة السادسة: الدعامة والحركة',                         order: 16 },
+    { id: 17, title: 'الجهاز الهضمي',                         unit_title: 'الوحدة السابعة: أجهزة جسم الإنسان',                       order: 17 },
+    { id: 18, title: 'جهاز الدوران',                          unit_title: 'الوحدة السابعة: أجهزة جسم الإنسان',                       order: 18 },
+    { id: 19, title: 'الجهاز التنفسي',                        unit_title: 'الوحدة السابعة: أجهزة جسم الإنسان',                       order: 19 },
+    { id: 20, title: 'جهاز الاخراج',                          unit_title: 'الوحدة السابعة: أجهزة جسم الإنسان',                       order: 20 },
+    { id: 21, title: 'الاجهزة التناسلية',                     unit_title: 'الوحدة الثامنة: التكاثر والمناعة',                        order: 21 },
+    { id: 22, title: 'جهاز المناعة',                          unit_title: 'الوحدة الثامنة: التكاثر والمناعة',                        order: 22 },
+    { id: 23, title: 'المضادات الحيوية',                      unit_title: 'الوحدة الثامنة: التكاثر والمناعة',                        order: 23 },
+    { id: 24, title: 'الاثراء والتوسع',                       unit_title: 'الإثراء والتوسع',                                         order: 24 },
   ];
 
   const stmt = await db.prepare(

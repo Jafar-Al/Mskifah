@@ -13,6 +13,7 @@ const PORT = 3001;
 const JWT_SECRET = 'super-secret-key-change-this-in-production';
 const ALLOWED_RESOURCE_TYPES = new Set(['video', 'exam', 'file']);
 const ALLOWED_FILE_CATEGORIES = new Set(['worksheets', 'cheat']);
+const SUPER_ADMIN_EMAIL = 'jafaradmin@mskifah.com';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -475,6 +476,15 @@ app.get('/api/users', async (_req, res) => {
             answeredMap[a.question_id] = { correct: !!a.is_correct, answeredAt: a.answered_at };
         });
 
+        const wazariAnswered = await db.all(
+            'SELECT question_id, is_correct, answered_at FROM wazari_user_progress WHERE user_id = ?',
+            [u.id]
+        );
+        const wazariAnsweredMap: any = {};
+        wazariAnswered.forEach((a: any) => {
+            wazariAnsweredMap[a.question_id] = { correct: !!a.is_correct, answeredAt: a.answered_at };
+        });
+
         const correctRows = await db.all(
             `SELECT p.question_id, p.answered_at, q.points
              FROM user_progress p
@@ -497,7 +507,7 @@ app.get('/api/users', async (_req, res) => {
         }
 
         const { created_at, ...safeUser } = u;
-        return { ...safeUser, answeredQuestions: answeredMap, scoreAchievedAt };
+        return { ...safeUser, answeredQuestions: answeredMap, wazariAnsweredQuestions: wazariAnsweredMap, scoreAchievedAt };
     }));
 
     res.json(usersWithProgress);
@@ -507,7 +517,7 @@ app.get('/api/admin/users', authenticateToken, requireAdmin, async (_req, res) =
     const db = await getDb();
     try {
         const users = await db.all(`
-            SELECT u.id, u.name, u.email, u.role, u.score, u.created_at,
+            SELECT u.id, u.name, u.email, u.role, u.score, u.created_at, u.created_by_admin_id,
                    COUNT(p.question_id) AS answered_count,
                    COALESCE(SUM(CASE WHEN p.is_correct THEN 1 ELSE 0 END), 0) AS correct_count
             FROM users u
@@ -552,13 +562,40 @@ app.put('/api/admin/users/:id/reset-password', authenticateToken, requireAdmin, 
     }
 });
 
+app.post('/api/admin/create-custom-user', authenticateToken, requireAdmin, async (req: any, res) => {
+    const adminEmail = (req.user?.email || '').toLowerCase();
+    if (adminEmail !== SUPER_ADMIN_EMAIL) return res.status(403).json({ error: 'Only the super admin can create custom users' });
+    const name = (req.body?.name || '').trim();
+    const score = parseInt(req.body?.score) || 0;
+    if (!name) return res.status(400).json({ error: 'Name is required' });
+    const db = await getDb();
+    try {
+        const id = crypto.randomUUID();
+        const fakeEmail = `custom_${id.slice(0, 8)}@placeholder.local`;
+        const hashedPassword = await bcrypt.hash(crypto.randomUUID(), 12);
+        await db.run(
+            'INSERT INTO users (id, name, email, password_hash, role, score, created_by_admin_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [id, name, fakeEmail, hashedPassword, 'student', score, req.user.id]
+        );
+        res.json({ success: true, id });
+    } catch {
+        res.status(500).json({ error: 'Failed to create custom user' });
+    }
+});
+
 app.delete('/api/admin/users/:id', authenticateToken, requireAdmin, async (req: any, res) => {
     const { id } = req.params;
     if (req.user?.id === id) return res.status(400).json({ error: 'Cannot delete your own account' });
     const db = await getDb();
     try {
-        const target = await db.get('SELECT id, role FROM users WHERE id = ?', [id]);
+        const target = await db.get('SELECT id, role, created_by_admin_id FROM users WHERE id = ?', [id]);
         if (!target) return res.sendStatus(404);
+        if (target.created_by_admin_id) {
+            const adminEmail = (req.user?.email || '').toLowerCase();
+            if (adminEmail !== SUPER_ADMIN_EMAIL) {
+                return res.status(403).json({ error: 'Only the super admin can delete this user' });
+            }
+        }
         if (target.role === 'admin') {
             const admins = await db.get('SELECT COUNT(*) as count FROM users WHERE role = ?', ['admin']);
             if (admins?.count <= 1) return res.status(400).json({ error: 'Cannot delete the last admin account' });

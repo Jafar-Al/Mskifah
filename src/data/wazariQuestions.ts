@@ -1,8 +1,8 @@
 export interface WazariQuestion {
   id: number;
   question: string;
-  options: [string, string, string];
-  correctAnswer: 0 | 1 | 2;
+  options: string[];
+  correctAnswer: number;
   points: number;
   imageUrl?: string | null;
 }
