@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\jafar\\\\OneDrive\\\\Desktop\\\\Websites\\\\miskifah-smth-main\\\\miskifah-smth-main\" -Recurse -Force)",
+      "Bash(Select-Object FullName)",
+      "Bash(Sort-Object FullName)",
+      "Bash(ConvertTo-Csv -NoTypeInformation)",
+      "Bash(Out-String)",
+      "PowerShell(ls -Recurse \"C:\\\\Users\\\\jafar\\\\OneDrive\\\\Desktop\\\\Websites\\\\miskifah-smth-main\\\\miskifah-smth-main\" -Force | ForEach-Object { $_.FullName })",
+      "Bash(mkdir -p \"C:\\\\Users\\\\jafar\\\\OneDrive\\\\Desktop\\\\Websites\\\\miskifah-smth-main\\\\miskifah-smth-main\\\\.claude\")",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(cloudflared tunnel *)",
+      "Bash(timeout 6 type \"C:\\\\Users\\\\jafar\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-jafar-OneDrive-Desktop-Websites-miskifah-smth-main-miskifah-smth-main\\\\7422af86-38f1-4aea-ada1-fe1a8c88e0ed\\\\tasks\\\\bqwgi2j9c.output\")",
+      "Bash(taskkill /F /IM cloudflared.exe)",
+      "Bash(exit 0)",
+      "Bash(ping -n 8 127.0.0.1)",
+      "Bash(powershell -Command \"[System.Text.Encoding]::UTF8.GetString\\([System.Convert]::FromBase64String\\('eyJhIjoiMzVkMThiMzZhNDU4ZDgyYjIyNWVhYmE3ZDdiN2E5YzIiLCJ0IjoiZThlM2Q4NjUtMDdkNC00ZjdiLTkwM2EtM2E2YmQwYzBjZTU1IiwicyI6Ik5JN3FKc2ozSXdRWkovaE1XQTRnMUdqWEpndTF0TG4rbmpCSVMxRnptQmM9In0='\\)\\)\")",
+      "PowerShell(npm install)"
+    ]
+  }
+}

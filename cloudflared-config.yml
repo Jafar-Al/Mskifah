@@ -1,0 +1,5 @@
+tunnel: e8e3d865-07d4-4f7b-903a-3a6bd0c0ce55
+ingress:
+  - hostname: biowith.mskifah.com
+    service: http://localhost:8080
+  - service: http_status:404

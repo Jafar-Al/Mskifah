@@ -1,0 +1,148 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 160 30% 4%;
+    --foreground: 150 20% 95%;
+
+    --card: 160 25% 8%;
+    --card-foreground: 150 20% 95%;
+
+    --popover: 160 25% 8%;
+    --popover-foreground: 150 20% 95%;
+
+    --primary: 158 64% 40%;
+    --primary-foreground: 160 30% 4%;
+
+    --secondary: 160 20% 15%;
+    --secondary-foreground: 150 20% 95%;
+
+    --muted: 160 15% 12%;
+    --muted-foreground: 150 10% 60%;
+
+    --accent: 45 90% 55%;
+    --accent-foreground: 160 30% 4%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+
+    --border: 160 20% 18%;
+    --input: 160 20% 18%;
+    --ring: 158 64% 40%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 160 25% 6%;
+    --sidebar-foreground: 150 20% 95%;
+    --sidebar-primary: 158 64% 40%;
+    --sidebar-primary-foreground: 160 30% 4%;
+    --sidebar-accent: 160 20% 15%;
+    --sidebar-accent-foreground: 150 20% 95%;
+    --sidebar-border: 160 20% 18%;
+    --sidebar-ring: 158 64% 40%;
+
+    /* Custom biology theme gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(158 64% 40%), hsl(158 64% 30%));
+    --gradient-hero: linear-gradient(180deg, hsl(160 30% 4%) 0%, hsl(160 25% 8%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(160 25% 10%), hsl(160 25% 6%));
+    --gradient-gold: linear-gradient(135deg, hsl(45 90% 55%), hsl(35 90% 45%));
+
+    /* Shadows */
+    --shadow-glow: 0 0 40px -10px hsl(158 64% 40% / 0.4);
+    --shadow-card: 0 4px 24px -4px hsl(0 0% 0% / 0.5);
+  }
+
+  .dark {
+    --background: 160 30% 4%;
+    --foreground: 150 20% 95%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Playfair Display', serif;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-card/80 backdrop-blur-xl border border-border/50 rounded-xl;
+    box-shadow: var(--shadow-card);
+  }
+
+  .glow-primary {
+    box-shadow: var(--shadow-glow);
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, hsl(158 64% 50%), hsl(45 90% 55%));
+  }
+
+  .dna-pattern {
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2322c55e' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  }
+
+  .challenge-box {
+    @apply relative overflow-hidden rounded-xl border-2 transition-all duration-300 cursor-pointer;
+    @apply hover:scale-105 hover:shadow-lg;
+  }
+
+  .challenge-box.locked {
+    @apply border-border bg-card;
+  }
+
+  .challenge-box.correct {
+    @apply border-success bg-success/10;
+  }
+
+  .challenge-box.incorrect {
+    @apply border-destructive bg-destructive/10;
+  }
+}
+
+@layer utilities {
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-pulse-slow {
+    animation: pulse 4s ease-in-out infinite;
+  }
+
+  .animate-fade-up {
+    animation: fadeUp 0.6s ease-out forwards;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+  }
+
+  @keyframes fadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
